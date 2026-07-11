@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import axios from 'axios'
-
+import { API_URL } from '../config'
 const LANGUAGES = ['English', 'Spanish', 'French', 'Portuguese', 'Arabic', 'Hindi']
 
 function ChatConcierge({ ttsEnabled }) {
@@ -32,7 +32,7 @@ function ChatConcierge({ ttsEnabled }) {
     setInput('')
     setLoading(true)
     try {
-      const res = await axios.post('http://127.0.0.1:8000/api/chat', {
+      const res = await axios.post(`${API_URL}/api/chat`, {
         message: userMessage.text,
         language: language
       })

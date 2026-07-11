@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
+import { API_URL } from '../config'
 
 function scalePos(loc) {
   return { x: (loc.x / 370) * 320 + 40, y: (loc.y / 370) * 320 + 20 }
@@ -13,14 +14,14 @@ const congestionFill = (level) => {
   return '#4b5563'
 }
 
-function MapView() {
+function MapView({ accessibleOnly }) {
   const [gates, setGates] = useState([])
   const [amenities, setAmenities] = useState([])
   const [selectedGate, setSelectedGate] = useState(null)
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/api/gates').then(res => setGates(res.data))
-    axios.get('http://127.0.0.1:8000/api/amenities').then(res => setAmenities(res.data))
+    axios.get(`${API_URL}/api/gates`).then(res => setGates(res.data))
+axios.get(`${API_URL}/api/amenities`).then(res => setAmenities(res.data))
   }, [])
 
   const amenitiesForGate = (gateId) => amenities.filter(a => a.gate === gateId)
@@ -33,7 +34,10 @@ function MapView() {
       className="bg-turf/30 border border-gold/20 rounded-2xl p-5 backdrop-blur-sm"
     >
       <p className="font-display text-xl tracking-wide mb-1 text-gold">STADIUM MAP</p>
-      <p className="text-xs text-offwhite/50 mb-4">Click a gate to see nearby amenities</p>
+      <p className="text-xs text-offwhite/50 mb-4">
+        Click a gate to see nearby amenities
+        {accessibleOnly && ' · ♿ Showing accessible gates only'}
+      </p>
 
       <div className="flex flex-col md:flex-row gap-6">
         <svg viewBox="0 0 400 400" className="w-full max-w-md mx-auto">
@@ -45,6 +49,7 @@ function MapView() {
           {gates.map(gate => {
             const pos = scalePos(gate.location)
             const isSelected = selectedGate?.id === gate.id
+            const isDimmed = accessibleOnly && !gate.accessible
             return (
               <g key={gate.id} onClick={() => setSelectedGate(gate)} className="cursor-pointer">
                 <motion.circle
@@ -52,11 +57,11 @@ function MapView() {
                   cy={pos.y}
                   r={isSelected ? 20 : 16}
                   fill={congestionFill(gate.congestion)}
-                  fillOpacity={gate.status === 'closed' ? 0.3 : 0.85}
-                  stroke={isSelected ? '#F5F7F5' : 'transparent'}
-                  strokeWidth="2"
-                  animate={gate.congestion === 'high' ? { scale: [1, 1.15, 1] } : { scale: 1 }}
-                  transition={{ duration: 1.2, repeat: gate.congestion === 'high' ? Infinity : 0 }}
+                  fillOpacity={isDimmed ? 0.15 : (gate.status === 'closed' ? 0.3 : 0.85)}
+                  stroke={isSelected ? '#F5F7F5' : (gate.accessible && accessibleOnly ? '#00FFFF' : 'transparent')}
+                  strokeWidth={gate.accessible && accessibleOnly ? 3 : 2}
+                  animate={gate.congestion === 'high' && !isDimmed ? { scale: [1, 1.15, 1] } : { scale: 1 }}
+                  transition={{ duration: 1.2, repeat: gate.congestion === 'high' && !isDimmed ? Infinity : 0 }}
                   whileHover={{ scale: 1.2 }}
                 />
                 <text
@@ -66,6 +71,7 @@ function MapView() {
                   fontSize="14"
                   fontWeight="bold"
                   fill="#0B1F1A"
+                  opacity={isDimmed ? 0.3 : 1}
                   className="pointer-events-none select-none"
                 >
                   {gate.id}

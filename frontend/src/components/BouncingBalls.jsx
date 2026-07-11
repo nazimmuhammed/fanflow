@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { API_URL } from '../config'
 
 const BALLS = [
   { top: '10%', left: '5%',  size: 42, duration: 4.2, delay: 0 },

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
+import { API_URL } from '../config'
 
 const BIN_STYLES = {
   RECYCLING: { color: '#3FD5C0', emoji: '♻️' },
@@ -20,7 +21,7 @@ function SustainabilityAssistant() {
   const [initiatives, setInitiatives] = useState([])
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/api/sustainability')
+    axios.get(`${API_URL}/api/sustainability`)
       .then(res => setInitiatives(res.data.initiatives))
       .catch(err => console.error('Failed to load sustainability info:', err))
   }, [])
@@ -30,7 +31,7 @@ function SustainabilityAssistant() {
     setLoading(true)
     setResult('')
     try {
-      const res = await axios.post('http://127.0.0.1:8000/api/sustainability/sort', { item })
+      const res = await axios.post(`${API_URL}/api/sustainability/sort`, { item })
       setResult(res.data.result)
     } catch (err) {
       setResult("Couldn't check that item. Please try again.")

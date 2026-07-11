@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
+import { API_URL } from '../config'
 
 function CrowdIntel() {
   const [readings, setReadings] = useState([])
@@ -10,7 +11,7 @@ function CrowdIntel() {
   // Poll live crowd data every 4 seconds - simulates a real sensor feed
   useEffect(() => {
     const fetchLive = () => {
-      axios.get('http://127.0.0.1:8000/api/crowd/live')
+      axios.get(`${API_URL}/api/crowd/live`)
         .then(res => setReadings(res.data))
         .catch(err => console.error('Failed to fetch live crowd data:', err))
     }
@@ -23,8 +24,8 @@ function CrowdIntel() {
   useEffect(() => {
     const fetchAlert = () => {
       setLoadingAlert(true)
-      axios.post('http://127.0.0.1:8000/api/crowd/alert')
-        .then(res => setAlert(res.data.alert))
+      axios.post(`${API_URL}/api/crowd/alert`)
+        .then(res => setAlert(res.data?.alert || 'Monitoring crowd conditions...'))
         .catch(err => console.error('Failed to fetch alert:', err))
         .finally(() => setLoadingAlert(false))
     }
@@ -58,7 +59,7 @@ function CrowdIntel() {
 
       <AnimatePresence mode="wait">
         <motion.div
-          key={alert}
+          key={alert || 'initial'}
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0 }}

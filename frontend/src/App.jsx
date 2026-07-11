@@ -9,7 +9,7 @@ import AccessibilityBar from './components/AccessibilityBar'
 import TransportAssistant from './components/TransportAssistant'
 import SustainabilityAssistant from './components/SustainabilityAssistant'
 import OperatorView from './components/OperatorView'
-
+import { API_URL } from "./config";
 function App() {
   const [gates, setGates] = useState([])
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
@@ -19,7 +19,7 @@ function App() {
   const [viewMode, setViewMode] = useState('fan')
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/api/gates')
+    axios.get(`${API_URL}/api/gates`)
       .then(res => setGates(res.data))
       .catch(err => console.error('Failed to load gates:', err))
   }, [])

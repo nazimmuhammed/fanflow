@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { API_URL } from '../config'
 
 function AccessibilityBar({ highContrast, setHighContrast, ttsEnabled, setTtsEnabled, accessibleOnly, setAccessibleOnly }) {
   const ToggleButton = ({ active, onClick, icon, label }) => (

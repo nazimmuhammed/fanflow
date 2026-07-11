@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
+import { API_URL } from '../config'
 
 const SEVERITY_STYLES = {
   LOW: '#3FD5C0',
@@ -22,14 +23,14 @@ function OperatorView() {
   const [log, setLog] = useState([])
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/api/gates').then(res => setGates(res.data))
+    axios.get(`${API_URL}/api/gates`).then(res => setGates(res.data))
   }, [])
 
   const analyzeIncident = async () => {
     if (!incident.trim() || loading) return
     setLoading(true)
     try {
-      const res = await axios.post('http://127.0.0.1:8000/api/incident/analyze', { description: incident })
+      const res = await axios.post(`${API_URL}/api/incident/analyze`, { description: incident })
       setTriageResult(res.data.result)
       setLog(prev => [{ text: incident, result: res.data.result, time: new Date().toLocaleTimeString() }, ...prev].slice(0, 5))
       setIncident('')

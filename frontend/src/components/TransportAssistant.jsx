@@ -1,6 +1,7 @@
  import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
+import { API_URL } from '../config'
 
 const GATES = ['A', 'B', 'C', 'D', 'E']
 
@@ -13,7 +14,7 @@ function TransportAssistant() {
     setLoading(true)
     setRecommendation('')
     try {
-      const res = await axios.post('http://127.0.0.1:8000/api/transport/recommend', { gate })
+      const res = await axios.post(`${API_URL}/api/transport/recommend`, { gate })
       setRecommendation(res.data.recommendation)
     } catch (err) {
       setRecommendation("Couldn't reach the transport system. Please try again.")
