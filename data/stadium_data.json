@@ -1,0 +1,65 @@
+{
+  "stadium": {
+    "name": "MetLife Stadium",
+    "city": "East Rutherford, NJ",
+    "event": "FIFA World Cup 2026 - Final Match",
+    "capacity": 82500
+  },
+  "gates": [
+    { "id": "A", "name": "Gate A - North", "location": {"x": 100, "y": 50}, "accessible": true, "status": "open", "congestion": "low", "nearestSections": ["101-115"] },
+    { "id": "B", "name": "Gate B - Northeast", "location": {"x": 250, "y": 60}, "accessible": true, "status": "open", "congestion": "medium", "nearestSections": ["116-130"] },
+    { "id": "C", "name": "Gate C - East", "location": {"x": 350, "y": 150}, "accessible": false, "status": "open", "congestion": "high", "nearestSections": ["131-145"] },
+    { "id": "D", "name": "Gate D - Southeast", "location": {"x": 300, "y": 280}, "accessible": true, "status": "open", "congestion": "low", "nearestSections": ["146-160"] },
+    { "id": "E", "name": "Gate E - South", "location": {"x": 150, "y": 320}, "accessible": true, "status": "open", "congestion": "medium", "nearestSections": ["161-175"] },
+    { "id": "F", "name": "Gate F - West", "location": {"x": 20, "y": 200}, "accessible": true, "status": "closed", "congestion": "none", "nearestSections": ["176-190"] }
+  ],
+  "amenities": [
+    { "type": "restroom", "accessible": true, "location": "Near Gate A, Level 1", "gate": "A" },
+    { "type": "restroom", "accessible": true, "location": "Near Gate D, Level 1", "gate": "D" },
+    { "type": "restroom", "accessible": false, "location": "Near Gate C, Level 2", "gate": "C" },
+    { "type": "first_aid", "accessible": true, "location": "Section 120 concourse", "gate": "B" },
+    { "type": "first_aid", "accessible": true, "location": "Section 165 concourse", "gate": "E" },
+    { "type": "food_court", "accessible": true, "location": "Level 1 Main Concourse", "gate": "A" },
+    { "type": "prayer_room", "accessible": true, "location": "Section 140 concourse", "gate": "C" },
+    { "type": "nursing_room", "accessible": true, "location": "Section 110 concourse", "gate": "A" },
+    { "type": "lost_and_found", "accessible": true, "location": "Guest Services, Gate B", "gate": "B" }
+  ],
+  "transit": {
+    "shuttles": [
+      { "route": "Shuttle 1 - Secaucus Junction", "nextDeparture": "18 min", "frequency": "every 15 min", "gate": "A" },
+      { "route": "Shuttle 2 - Port Authority NYC", "nextDeparture": "6 min", "frequency": "every 10 min", "gate": "D" },
+      { "route": "Shuttle 3 - Newark Penn Station", "nextDeparture": "22 min", "frequency": "every 20 min", "gate": "E" }
+    ],
+    "parking": [
+      { "lot": "Lot A", "status": "full", "walkTimeToGate": "5 min", "gate": "A" },
+      { "lot": "Lot D", "status": "available", "spotsLeft": 340, "walkTimeToGate": "8 min", "gate": "D" },
+      { "lot": "Rideshare Zone", "status": "available", "walkTimeToGate": "3 min", "gate": "B" }
+    ],
+    "rail": { "station": "Meadowlands Rail Station", "nextTrain": "11 min", "walkTime": "10 min from Gate E" }
+  },
+  "sustainability": {
+    "wasteStations": [
+      { "location": "Near Gate A", "types": ["recycling", "compost", "landfill"] },
+      { "location": "Near Gate C", "types": ["recycling", "landfill"] },
+      { "location": "Near Gate E", "types": ["recycling", "compost", "landfill"] }
+    ],
+    "initiatives": [
+      "Reusable cup program - return for refill discount",
+      "Solar-powered charging stations near Gates A and D",
+      "Carbon offset option included in shuttle ticket"
+    ]
+  },
+  "crowd_sensors": [
+    { "gateId": "A", "density": 32, "trend": "stable" },
+    { "gateId": "B", "density": 58, "trend": "rising" },
+    { "gateId": "C", "density": 87, "trend": "rising" },
+    { "gateId": "D", "density": 21, "trend": "falling" },
+    { "gateId": "E", "density": 45, "trend": "stable" }
+  ],
+  "faqs": [
+    { "q": "What time do gates open?", "a": "Gates open 3 hours before kickoff." },
+    { "q": "Can I bring a bag?", "a": "Only clear bags smaller than 12x6x12 inches are permitted." },
+    { "q": "Is re-entry allowed?", "a": "No re-entry is allowed once you exit the stadium." },
+    { "q": "Where do I pick up accessible seating assistance?", "a": "Guest Services at Gate A or Gate D." }
+  ]
+}
