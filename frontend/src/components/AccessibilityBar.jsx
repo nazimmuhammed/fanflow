@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import { API_URL } from '../config'
 
 function AccessibilityBar({ highContrast, setHighContrast, ttsEnabled, setTtsEnabled, accessibleOnly, setAccessibleOnly }) {
   const ToggleButton = ({ active, onClick, icon, label }) => (
@@ -7,13 +6,15 @@ function AccessibilityBar({ highContrast, setHighContrast, ttsEnabled, setTtsEna
       onClick={onClick}
       whileTap={{ scale: 0.95 }}
       whileHover={{ scale: 1.03 }}
+      aria-pressed={active}
+      aria-label={label}
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
         active
           ? 'bg-gold text-pitch border-gold'
           : 'bg-transparent text-offwhite/70 border-gold/30 hover:border-gold/60'
       }`}
     >
-      <span>{icon}</span>
+      <span aria-hidden="true">{icon}</span>
       {label}
     </motion.button>
   )

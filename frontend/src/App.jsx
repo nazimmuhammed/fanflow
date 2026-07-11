@@ -9,7 +9,8 @@ import AccessibilityBar from './components/AccessibilityBar'
 import TransportAssistant from './components/TransportAssistant'
 import SustainabilityAssistant from './components/SustainabilityAssistant'
 import OperatorView from './components/OperatorView'
-import { API_URL } from "./config";
+import { API_URL } from "./config"
+
 function App() {
   const [gates, setGates] = useState([])
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
@@ -82,6 +83,7 @@ function App() {
           </p>
           <button
             onClick={() => setViewMode(viewMode === 'fan' ? 'operator' : 'fan')}
+            aria-label={viewMode === 'fan' ? 'Switch to staff view' : 'Switch to fan view'}
             className="text-xs font-bold px-3 py-1.5 rounded-full border border-gold text-gold hover:bg-gold hover:text-pitch transition-colors whitespace-nowrap"
           >
             {viewMode === 'fan' ? '🎽 Switch to Staff View' : '🏟️ Switch to Fan View'}
@@ -99,12 +101,13 @@ function App() {
       />
 
       {viewMode === 'fan' ? (
-        <>
+        <main>
           <div className="relative z-10 border-b border-gold/10 bg-turf/20 overflow-hidden py-2">
             <motion.div
               className="whitespace-nowrap text-xs font-semibold text-gold/80 tracking-wider"
               animate={{ x: ['0%', '-50%'] }}
               transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+              aria-hidden="true"
             >
               {"  ⚽ GATE C — HIGH CONGESTION, REDIRECT SUGGESTED    🚌 SHUTTLE 2 DEPARTING IN 6 MIN    ♿ ACCESSIBLE ROUTES ACTIVE AT GATES A, B, D, E    🌱 REUSABLE CUP PROGRAM LIVE NEAR GATE A    ⚽ GATE C — HIGH CONGESTION, REDIRECT SUGGESTED    🚌 SHUTTLE 2 DEPARTING IN 6 MIN    ♿ ACCESSIBLE ROUTES ACTIVE AT GATES A, B, D, E    🌱 REUSABLE CUP PROGRAM LIVE NEAR GATE A  "}
             </motion.div>
@@ -121,6 +124,7 @@ function App() {
               animate={{ rotate: 360, scale: 1 }}
               transition={{ duration: 1, ease: 'easeOut', delay: 0.1 }}
               className="mx-auto mb-4 text-6xl drop-shadow-[0_0_14px_rgba(212,167,44,0.6)]"
+              aria-hidden="true"
             >
               ⚽
             </motion.div>
@@ -190,7 +194,7 @@ function App() {
             </motion.div>
 
           </section>
-        </>
+        </main>
       ) : (
         <OperatorView />
       )}

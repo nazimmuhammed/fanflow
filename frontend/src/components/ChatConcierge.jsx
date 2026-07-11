@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import axios from 'axios'
 import { API_URL } from '../config'
+
 const LANGUAGES = ['English', 'Spanish', 'French', 'Portuguese', 'Arabic', 'Hindi']
 
 function ChatConcierge({ ttsEnabled }) {
@@ -61,6 +62,7 @@ function ChatConcierge({ ttsEnabled }) {
         <select
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
+          aria-label="Select response language"
           className="bg-pitch text-offwhite text-xs rounded px-2 py-1 border border-pitch/40 outline-none"
         >
           {LANGUAGES.map(lang => <option key={lang} value={lang}>{lang}</option>)}
@@ -104,6 +106,7 @@ function ChatConcierge({ ttsEnabled }) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask about gates, restrooms, parking..."
+          aria-label="Ask the FanFlow concierge a question"
           className="flex-1 bg-pitch text-offwhite text-sm rounded-lg px-3 py-2 outline-none border border-gold/20 focus:border-gold placeholder:text-offwhite/40"
         />
         <motion.button
@@ -115,6 +118,7 @@ function ChatConcierge({ ttsEnabled }) {
         >
           <motion.span
             className="text-sm inline-block"
+            aria-hidden="true"
             animate={loading ? { rotate: 360 } : { rotate: 0 }}
             transition={loading ? { duration: 0.6, repeat: Infinity, ease: 'linear' } : { duration: 0.3 }}
           >

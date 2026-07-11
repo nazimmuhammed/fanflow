@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import { API_URL } from '../config'
 
 const BALLS = [
   { top: '10%', left: '5%',  size: 42, duration: 4.2, delay: 0 },
@@ -13,7 +12,7 @@ const BALLS = [
 
 function BouncingBalls() {
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
       {BALLS.map((ball, i) => (
         <motion.div
           key={i}
