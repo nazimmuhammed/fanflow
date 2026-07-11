@@ -1,12 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 import json
 import os
+import random
 import chromadb
 from groq import Groq
 from dotenv import load_dotenv
-import random
 
 load_dotenv()
 
@@ -14,60 +16,81 @@ app = FastAPI(title="FanFlow AI - Smart Stadium Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://fanflow-frontend.onrender.com",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    return JSONResponse(status_code=422, content={"detail": "Invalid request data."})
+
+
 DATA_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "stadium_data.json")
+
 
 def load_data():
     with open(DATA_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
+
 
 # --- AI / RAG setup ---
 client_ai = Groq()
 chroma_client = chromadb.PersistentClient(path=os.path.join(os.path.dirname(__file__), "chroma_store"))
 collection = chroma_client.get_collection("stadium_knowledge")
 
+
 # --- Basic data routes ---
 @app.get("/")
 def root():
     return {"status": "FanFlow AI backend is running"}
 
+
 @app.get("/api/stadium")
 def get_stadium_info():
     return load_data()["stadium"]
+
 
 @app.get("/api/gates")
 def get_gates():
     return load_data()["gates"]
 
+
 @app.get("/api/amenities")
 def get_amenities():
     return load_data()["amenities"]
+
 
 @app.get("/api/transit")
 def get_transit():
     return load_data()["transit"]
 
+
 @app.get("/api/sustainability")
 def get_sustainability():
     return load_data()["sustainability"]
+
 
 @app.get("/api/crowd")
 def get_crowd():
     return load_data()["crowd_sensors"]
 
+
 @app.get("/api/faqs")
 def get_faqs():
     return load_data()["faqs"]
 
+
 # --- AI Concierge chat route ---
 class ChatRequest(BaseModel):
-    message: str
-    language: str = "English"
+    message: str = Field(..., min_length=1, max_length=500)
+    language: str = Field(default="English", max_length=50)
+
 
 @app.post("/api/chat")
 def chat(request: ChatRequest):
@@ -101,8 +124,9 @@ def chat(request: ChatRequest):
         "answer": answer_text,
         "sources_used": results["documents"][0]
     }
-    # --- Crowd Intelligence ---
 
+
+# --- Crowd Intelligence ---
 @app.get("/api/crowd/live")
 def get_live_crowd():
     """
@@ -121,6 +145,7 @@ def get_live_crowd():
         })
     return live_data
 
+
 @app.post("/api/crowd/alert")
 def generate_crowd_alert():
     """
@@ -130,10 +155,44 @@ def generate_crowd_alert():
     """
     live_data = get_live_crowd()
     gates_data = load_data()["gates"]
-    # --- Transportation Assistant ---
 
+    summary_lines = []
+    for sensor in live_data:
+        gate_info = next((g for g in gates_data if g["id"] == sensor["gateId"]), None)
+        gate_name = gate_info["name"] if gate_info else sensor["gateId"]
+        summary_lines.append(f"{gate_name}: {sensor['density']}% capacity")
+    summary = "\n".join(summary_lines)
+
+    system_prompt = (
+        "You are an AI operations assistant for stadium crowd management at the "
+        "FIFA World Cup 2026. You will be given live gate capacity readings. "
+        "Identify any gates approaching or over capacity (80%+), and write ONE "
+        "short, actionable recommendation for stadium staff - like a real ops "
+        "radio call. If everything is fine, say so briefly and positively. "
+        "Keep it under 2 sentences, no preamble."
+    )
+
+    response = client_ai.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        max_tokens=100,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Current gate capacity readings:\n{summary}"}
+        ]
+    )
+
+    alert_text = response.choices[0].message.content
+
+    return {
+        "alert": alert_text,
+        "readings": live_data
+    }
+
+
+# --- Transportation Assistant ---
 class TransportRequest(BaseModel):
-    gate: str
+    gate: str = Field(..., min_length=1, max_length=10)
+
 
 @app.post("/api/transport/recommend")
 def recommend_transport(request: TransportRequest):
@@ -168,10 +227,12 @@ def recommend_transport(request: TransportRequest):
         "recommendation": response.choices[0].message.content,
         "transit_options": transit
     }
-# --- Sustainability Assistant ---
 
+
+# --- Sustainability Assistant ---
 class WasteRequest(BaseModel):
-    item: str
+    item: str = Field(..., min_length=1, max_length=200)
+
 
 @app.post("/api/sustainability/sort")
 def sort_waste(request: WasteRequest):
@@ -198,10 +259,12 @@ def sort_waste(request: WasteRequest):
     )
 
     return {"result": response.choices[0].message.content}
-    # --- Operator: Incident Analysis ---
 
+
+# --- Operator: Incident Analysis ---
 class IncidentRequest(BaseModel):
-    description: str
+    description: str = Field(..., min_length=1, max_length=500)
+
 
 @app.post("/api/incident/analyze")
 def analyze_incident(request: IncidentRequest):
@@ -229,35 +292,3 @@ def analyze_incident(request: IncidentRequest):
     )
 
     return {"result": response.choices[0].message.content}
-    # Build a readable summary of current conditions for the LLM
-    summary_lines = []
-    for sensor in live_data:
-        gate_info = next((g for g in gates_data if g["id"] == sensor["gateId"]), None)
-        gate_name = gate_info["name"] if gate_info else sensor["gateId"]
-        summary_lines.append(f"{gate_name}: {sensor['density']}% capacity")
-    summary = "\n".join(summary_lines)
-
-    system_prompt = (
-        "You are an AI operations assistant for stadium crowd management at the "
-        "FIFA World Cup 2026. You will be given live gate capacity readings. "
-        "Identify any gates approaching or over capacity (80%+), and write ONE "
-        "short, actionable recommendation for stadium staff - like a real ops "
-        "radio call. If everything is fine, say so briefly and positively. "
-        "Keep it under 2 sentences, no preamble."
-    )
-
-    response = client_ai.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        max_tokens=100,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Current gate capacity readings:\n{summary}"}
-        ]
-    )
-
-    alert_text = response.choices[0].message.content
-
-    return {
-        "alert": alert_text,
-        "readings": live_data
-    }
