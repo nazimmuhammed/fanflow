@@ -4,3 +4,4 @@ python-dotenv
 groq
 chromadb
 pytest
+slowapi
