@@ -1,8 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import json
 import os
 import random
@@ -13,6 +16,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI(title="FanFlow AI - Smart Stadium Backend")
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,13 +46,11 @@ def load_data():
         return json.load(f)
 
 
-# --- AI / RAG setup ---
 client_ai = Groq()
 chroma_client = chromadb.PersistentClient(path=os.path.join(os.path.dirname(__file__), "chroma_store"))
 collection = chroma_client.get_collection("stadium_knowledge")
 
 
-# --- Basic data routes ---
 @app.get("/")
 def root():
     return {"status": "FanFlow AI backend is running"}
@@ -86,16 +91,16 @@ def get_faqs():
     return load_data()["faqs"]
 
 
-# --- AI Concierge chat route ---
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=500)
     language: str = Field(default="English", max_length=50)
 
 
 @app.post("/api/chat")
-def chat(request: ChatRequest):
+@limiter.limit("15/minute")
+def chat(request: Request, chat_request: ChatRequest):
     results = collection.query(
-        query_texts=[request.message],
+        query_texts=[chat_request.message],
         n_results=4
     )
     retrieved_facts = "\n".join(results["documents"][0])
@@ -105,7 +110,7 @@ def chat(request: ChatRequest):
         "FIFA World Cup 2026. Answer the fan's question using ONLY the facts "
         "provided below. Be concise, warm, and practical. If the facts don't "
         "contain the answer, say you don't have that information and suggest "
-        f"asking Guest Services. Respond in this language: {request.language}.\n\n"
+        f"asking Guest Services. Respond in this language: {chat_request.language}.\n\n"
         f"STADIUM FACTS:\n{retrieved_facts}"
     )
 
@@ -114,7 +119,7 @@ def chat(request: ChatRequest):
         max_tokens=300,
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": request.message}
+            {"role": "user", "content": chat_request.message}
         ]
     )
 
@@ -126,13 +131,8 @@ def chat(request: ChatRequest):
     }
 
 
-# --- Crowd Intelligence ---
 @app.get("/api/crowd/live")
 def get_live_crowd():
-    """
-    Simulates live sensor readings by jittering the base crowd data
-    each time this endpoint is called - mimics a real-time feed.
-    """
     data = load_data()
     live_data = []
     for sensor in data["crowd_sensors"]:
@@ -147,12 +147,8 @@ def get_live_crowd():
 
 
 @app.post("/api/crowd/alert")
-def generate_crowd_alert():
-    """
-    Takes the current live crowd data and asks the LLM to reason about it
-    like a stadium operations manager would - this is the GenAI 'operational
-    intelligence' piece, not just a threshold if/else check.
-    """
+@limiter.limit("10/minute")
+def generate_crowd_alert(request: Request):
     live_data = get_live_crowd()
     gates_data = load_data()["gates"]
 
@@ -189,13 +185,13 @@ def generate_crowd_alert():
     }
 
 
-# --- Transportation Assistant ---
 class TransportRequest(BaseModel):
     gate: str = Field(..., min_length=1, max_length=10)
 
 
 @app.post("/api/transport/recommend")
-def recommend_transport(request: TransportRequest):
+@limiter.limit("15/minute")
+def recommend_transport(request: Request, transport_request: TransportRequest):
     data = load_data()
     transit = data["transit"]
 
@@ -219,7 +215,7 @@ def recommend_transport(request: TransportRequest):
         max_tokens=150,
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"My destination is Gate {request.gate}.\n\n{context}"}
+            {"role": "user", "content": f"My destination is Gate {transport_request.gate}.\n\n{context}"}
         ]
     )
 
@@ -229,17 +225,13 @@ def recommend_transport(request: TransportRequest):
     }
 
 
-# --- Sustainability Assistant ---
 class WasteRequest(BaseModel):
     item: str = Field(..., min_length=1, max_length=200)
 
 
 @app.post("/api/sustainability/sort")
-def sort_waste(request: WasteRequest):
-    """
-    Uses the LLM to reason about which bin an item belongs in - genuine
-    classification reasoning, not a hardcoded keyword lookup table.
-    """
+@limiter.limit("15/minute")
+def sort_waste(request: Request, waste_request: WasteRequest):
     system_prompt = (
         "You are a waste-sorting assistant at a FIFA World Cup 2026 stadium. "
         "The stadium has three bins: RECYCLING (plastic, cans, paper, cardboard), "
@@ -254,25 +246,20 @@ def sort_waste(request: WasteRequest):
         max_tokens=60,
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Item: {request.item}"}
+            {"role": "user", "content": f"Item: {waste_request.item}"}
         ]
     )
 
     return {"result": response.choices[0].message.content}
 
 
-# --- Operator: Incident Analysis ---
 class IncidentRequest(BaseModel):
     description: str = Field(..., min_length=1, max_length=500)
 
 
 @app.post("/api/incident/analyze")
-def analyze_incident(request: IncidentRequest):
-    """
-    Staff describe an incident in plain language; the LLM classifies severity
-    and recommends an immediate action - this is real-time decision support
-    for venue staff, not just a fan-facing feature.
-    """
+@limiter.limit("15/minute")
+def analyze_incident(request: Request, incident_request: IncidentRequest):
     system_prompt = (
         "You are an incident triage assistant for stadium operations staff at "
         "FIFA World Cup 2026. Given an incident description, respond in this "
@@ -287,7 +274,7 @@ def analyze_incident(request: IncidentRequest):
         max_tokens=100,
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Incident: {request.description}"}
+            {"role": "user", "content": f"Incident: {incident_request.description}"}
         ]
     )
 
